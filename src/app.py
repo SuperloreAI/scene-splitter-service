@@ -8,6 +8,7 @@ from google_cloud.gcp_storage import GoogleCloudStorage
 
 from resources.download_video import DownloadVideoResource, UploadVideoResource
 from resources.scene_detect import SceneDetectResource
+from resources.clip_scenes import ClipScenesResource
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -37,9 +38,14 @@ def create_response(req, resp):
 # Start the server
 app = falcon.App()
 app.add_route('/', create_response)
-app.add_route('/download-video', DownloadVideoResource())
-app.add_route('/upload-video', UploadVideoResource())
-app.add_route('/scene-detect', SceneDetectResource())
+
+# for testing purposes only
+app.add_route('/test/download-video', DownloadVideoResource())
+app.add_route('/test/upload-video', UploadVideoResource())
+app.add_route('/test/scene-detect', SceneDetectResource())
+
+# for real production
+app.add_route('/clip-scenes', ClipScenesResource())
 
 if __name__ == '__main__':
     with simple_server.make_server('0.0.0.0', 8000, app) as httpd:
