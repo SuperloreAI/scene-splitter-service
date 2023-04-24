@@ -29,15 +29,15 @@ gcs_service_account_key_str = secret_manager.get_secret(secret_name_app_backend)
 GoogleCloudStorage.initialize(project_id, gcs_service_account_key_str)
 
 
-# Default response
-def create_response(req, resp):
-    resp.status = falcon.HTTP_200
-    resp.content_type = 'text/plain'
-    resp.text = 'Hello, world!'
+class DemoResource:
+    def on_get(self, req, resp):
+      resp.status = falcon.HTTP_200
+      resp.content_type = 'text/plain'
+      resp.text = 'Hello, world!'
 
 # Start the server
 app = falcon.App()
-app.add_route('/', create_response)
+app.add_route('/', DemoResource())
 
 # for testing purposes only
 app.add_route('/test/download-video', DownloadVideoResource())

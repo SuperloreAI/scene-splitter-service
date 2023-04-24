@@ -27,12 +27,13 @@ class GoogleCloudStorage:
         instance.client = storage.Client(credentials=instance.credentials, project=project_id)
         instance._initialized = True
 
-    def get_file_content(self, file_url, local_folder=None):
+    def get_file_content(self, file_url, local_folder=None, custom_file_name=None):
         response = requests.get(file_url)
         response.raise_for_status()
 
         if local_folder is not None:
-            local_file_path = os.path.join(local_folder, os.path.basename(file_url))
+            file_name = custom_file_name if custom_file_name else os.path.basename(file_url)
+            local_file_path = os.path.join(local_folder, file_name)
             with open(local_file_path, "wb") as local_file:
                 local_file.write(response.content)
             print(f"File saved to {local_file_path}")
@@ -62,3 +63,27 @@ class GoogleCloudStorage:
 
         except Exception as e:
             print(f"Error uploading file: {str(e)}")
+
+
+import re
+from urllib.parse import urlparse
+
+def check_bucket(url_string):
+    approved_buckets = ["superlore-video-sources-738437"]
+    parsed_url = urlparse(url_string)
+
+    if not parsed_url.scheme or not parsed_url.netloc:
+        raise ValueError("Invalid URL")
+
+    if parsed_url.scheme != 'https' or parsed_url.netloc != 'storage.googleapis.com':
+        raise ValueError("URL is not a Google Cloud Storage URL")
+
+    match = re.match(r'^/([^/]+)/', parsed_url.path)
+    if not match:
+        raise ValueError("Invalid Google Cloud Storage path")
+
+    bucket = match.group(1)
+    if bucket not in approved_buckets:
+        raise ValueError("URL does not belong to any of the approved buckets")
+
+    return True
