@@ -61,6 +61,8 @@ class GoogleCloudStorage:
               blob.upload_from_file(file_obj)
 
           print(f"File uploaded to: gs://{bucket_name}/{upload_file_name}")
+          
+          return f"https://storage.googleapis.com/{bucket_name}/{upload_file_name}"
 
         except Exception as e:
             print(f"Error uploading file: {str(e)}")

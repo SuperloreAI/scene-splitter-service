@@ -15,6 +15,8 @@ class ClipScenesResource:
         "assetID": "0000-0000-0000-0000"
       }
       """
+      bucket_name = os.environ["CLOUD_BUCKET"]
+      gcs_instance = GoogleCloudStorage.instance()
 
       print("we about to get lit")
       try:
@@ -41,7 +43,7 @@ class ClipScenesResource:
       os.makedirs(local_folder, exist_ok=True)
       gcs_instance = GoogleCloudStorage.instance()
       custom_file_name = f"{assetID}_video.mp4"
-      content = gcs_instance.get_file_content(videoUrl, local_folder=local_folder, custom_file_name=custom_file_name)
+      gcs_instance.get_file_content(videoUrl, local_folder=local_folder, custom_file_name=custom_file_name)
 
       # clip the scenes
       print("Scene detection...")
@@ -74,6 +76,10 @@ class ClipScenesResource:
         scene_number = f"{i:03d}"
         scene_file = os.path.join(export_dir, f"{assetID}_video_scene_{scene_number}.mp4")
         print(scene_file)
+        # upload to gbucket
+        uploaded_scene_url = gcs_instance.upload_file_content(scene_file, bucket_name, f"original_video_{assetID}/scene_{scene_number}_asset_id_{asset_id_scene}.mp4")
+        print("Uploaded content scene to google cloud bucket!")
+        print(uploaded_scene_url)
         # Load the video using OpenCV
         cap = cv2.VideoCapture(scene_file)
         # Get the total number of frames
@@ -98,26 +104,24 @@ class ClipScenesResource:
             print(ret)
             if ret:
                 resized_frame = resize_with_aspect_ratio(frame, 244)
-                output_path = f"{frame_output_dir}/frame_{i + 1}.png"
-                print(f"Allegedly writing to {output_path}")
-                cv2.imwrite(output_path, resized_frame)
+                output_frame_path = f"{frame_output_dir}/frame_{i + 1}.png"
+                print(f"Allegedly writing to {output_frame_path}")
+                cv2.imwrite(output_frame_path, resized_frame)
+                # upload to cloud bucket
+                uploaded_frame_url = gcs_instance.upload_file_content(output_frame_path, bucket_name, f"original_video_{assetID}/scene_{scene_number}_asset_id_{asset_id_scene}/frame_{i + 1}_asset_id_{asset_id_frame}.png")
+                print("Uploaded content frame to google cloud bucket!")
+                print(uploaded_frame_url)
                 # save to database
                 frames_save_db.append({
-                  "asset_id_frame": asset_id_frame,
-                  "asset_id_scene": asset_id_scene,
-                  "asset_id_original": assetID
+                  "frame_asset_id": asset_id_frame,
+                  "frame_url": uploaded_frame_url,
+                  "scene_asset_id": asset_id_scene,
+                  "scene_url": uploaded_scene_url,
+                  "original_asset_id": assetID,
+                  "original_asset_url": videoUrl
                 })
                 
       print(frames_save_db)
-
-        
-      # # upload the scenes
-      # sample_bucket="superlore-video-sources-738437"
-      # local_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'assets')
-      # sample_file = os.path.join(local_folder, "bitbunny.mp4")
-      # gcs_instance = GoogleCloudStorage.instance()
-      # content = gcs_instance.upload_file_content(sample_file, sample_bucket, "scene-detect/falcon-bitbunny.mp4")
-      # print(content)
 
       # # delete the local files
       # print('deleting local files...')

@@ -14,7 +14,8 @@ the individual parts are set up:
 ✅ google cloud auth to secret manager & storage bucket upload
 ✅ PyDetectScene + OpenCV works
 ✅ connect it all together into a single http post flow (individual parts all working)
-☑️ Upload scenes & frames to cloud storage with asset_ids
+✅ Upload scenes & frames to cloud storage with asset_ids
+☑️ Delete local files
 ☑️ Send frames to postgres server (which also hits banana inference to vector embed the actual frames)
 ☑️ compile into prod release
 ☑️ add dockerfile and deploy to cloudrun
