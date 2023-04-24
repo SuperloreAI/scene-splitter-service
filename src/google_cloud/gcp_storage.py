@@ -5,6 +5,7 @@ from google.oauth2 import service_account
 from google.cloud import storage
 from urllib.parse import urlparse, unquote
 import requests
+import cv2
 
 class GoogleCloudStorage:
     _instance = None
@@ -87,3 +88,16 @@ def check_bucket(url_string):
         raise ValueError("URL does not belong to any of the approved buckets")
 
     return True
+  
+def resize_with_aspect_ratio(image, max_size, interpolation=cv2.INTER_AREA):
+    h, w = image.shape[:2]
+    aspect_ratio = float(w) / float(h)
+    
+    if h > w:
+        new_height = max_size
+        new_width = int(aspect_ratio * new_height)
+    else:
+        new_width = max_size
+        new_height = int(new_width / aspect_ratio)
+    
+    return cv2.resize(image, (new_width, new_height), interpolation=interpolation)
