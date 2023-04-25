@@ -3,8 +3,9 @@ import os
 from google_cloud.gcp_storage import GoogleCloudStorage, check_bucket, resize_with_aspect_ratio
 from scenedetect import detect, ContentDetector, split_video_ffmpeg
 import cv2
-import random
+import shutil
 import uuid
+import requests
 
 class ClipScenesResource:
     def on_post(self, req, resp):
@@ -12,7 +13,8 @@ class ClipScenesResource:
       POST/clip-scenes
       req.media = {
         "videoUrl": "https://google-cloud-bucket.com/.../video.mp4",
-        "assetID": "0000-0000-0000-0000"
+        "assetID": "0000-0000-0000-0000",
+        "title": "Video Title"
       }
       """
       bucket_name = os.environ["CLOUD_BUCKET"]
@@ -31,6 +33,7 @@ class ClipScenesResource:
       
       videoUrl = json_body['videoUrl']
       assetID = json_body['assetID']
+      title = json_body['title']
       
       try:
           check_bucket(videoUrl)
@@ -77,6 +80,7 @@ class ClipScenesResource:
         scene_file = os.path.join(export_dir, f"{assetID}_video_scene_{scene_number}.mp4")
         print(scene_file)
         # upload to gbucket
+        top_folder_level = f"https://storage.googleapis.com/{bucket_name}/original_video_{assetID}/"
         uploaded_scene_url = gcs_instance.upload_file_content(scene_file, bucket_name, f"original_video_{assetID}/scene_{scene_number}_asset_id_{asset_id_scene}.mp4")
         print("Uploaded content scene to google cloud bucket!")
         print(uploaded_scene_url)
@@ -118,18 +122,35 @@ class ClipScenesResource:
                   "scene_asset_id": asset_id_scene,
                   "scene_url": uploaded_scene_url,
                   "original_asset_id": assetID,
-                  "original_asset_url": videoUrl
+                  "original_asset_url": videoUrl,
+                  "top_folder_level": top_folder_level,
+                  "title": title,
                 })
                 
       print(frames_save_db)
-
-      # # delete the local files
-      # print('deleting local files...')
-
-      # # (optional) tell another service that the clips are done clipping
-      # # or tell another service that it can vectorize the clips now
-      # # ideally there is a central service responsible for the media_asset status updates
       
+      # send to postgres
+      postgres_db_url = os.environ["MAIN_DB_SERVER"]
+      headers = {'Content-Type': 'application/json'}
+      data = {
+        "scenes": frames_save_db,
+        "top_folder_level": top_folder_level,
+        "title": title
+      }
+      response = requests.post(postgres_db_url, json=data, headers=headers)
+      # Check the status code of the response
+      if response.status_code == 200:
+          print('Request was successful')
+          print(response.json())  # Assuming the response is JSON
+      else:
+          print(f'Request failed with status code: {response.status_code}')
+          print(response.text)
+
+      # delete the local files
+      if os.path.exists(local_folder):
+        shutil.rmtree(local_folder)
+        
+      # response to finish
       resp.status = falcon.HTTP_200
       resp.content_type = 'text/plain'
       resp.text = 'Clip Scenes'

@@ -6,3 +6,4 @@ python-dotenv
 scenedetect[opencv-headless]
 opencv-python-headless
 numpy
+requests
