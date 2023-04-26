@@ -107,10 +107,10 @@ class ClipScenesResource:
             print(f"Reading frame...")
             print(ret)
             if ret:
-                resized_frame = resize_with_aspect_ratio(frame, 244)
+                # resized_frame = resize_with_aspect_ratio(frame, 244)
                 output_frame_path = f"{frame_output_dir}/frame_{i + 1}.png"
                 print(f"Allegedly writing to {output_frame_path}")
-                cv2.imwrite(output_frame_path, resized_frame)
+                cv2.imwrite(output_frame_path, frame)
                 # upload to cloud bucket
                 uploaded_frame_url = gcs_instance.upload_file_content(output_frame_path, bucket_name, f"original_video_{assetID}/scene_{scene_number}_asset_id_{asset_id_scene}/frame_{i + 1}_asset_id_{asset_id_frame}.png")
                 print("Uploaded content frame to google cloud bucket!")
